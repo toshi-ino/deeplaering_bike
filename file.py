@@ -20,11 +20,11 @@ from tensorflow.keras.preprocessing import image_dataset_from_directory
 """
 
 # Model / data parameters
-num_classes = 10
-input_shape = (28, 28, 1)
+num_classes = 2
+input_shape = (256, 256, 3)
 
 # the data, split between train and test sets
-(x_train, y_train), (x_test, y_test) = keras.datasets.mnist.load_data()
+# (x_train, y_train), (x_test, y_test) = keras.datasets.mnist.load_data()
 
 train_ds = image_dataset_from_directory(
     directory='training_data/',
@@ -38,21 +38,27 @@ validation_ds = image_dataset_from_directory(
     label_mode='categorical',
     batch_size=32,
     image_size=(256, 256))
+test_ds = image_dataset_from_directory(
+    directory='test_data/',
+    labels='inferred',
+    label_mode='categorical',
+    batch_size=32,
+    image_size=(256, 256))
 
 # Scale images to the [0, 1] range
-x_train = x_train.astype("float32") / 255
-x_test = x_test.astype("float32") / 255
-# Make sure images have shape (28, 28, 1)
-x_train = np.expand_dims(x_train, -1)
-x_test = np.expand_dims(x_test, -1)
-print("x_train shape:", x_train.shape)
-print(x_train.shape[0], "train samples")
-print(x_test.shape[0], "test samples")
+# x_train = x_train.astype("float32") / 255
+# x_test = x_test.astype("float32") / 255
+# # Make sure images have shape (28, 28, 1)
+# x_train = np.expand_dims(x_train, -1)
+# x_test = np.expand_dims(x_test, -1)
+# print("x_train shape:", x_train.shape)
+# print(x_train.shape[0], "train samples")
+# print(x_test.shape[0], "test samples")
 
 
 # convert class vectors to binary class matrices
-y_train = keras.utils.to_categorical(y_train, num_classes)
-y_test = keras.utils.to_categorical(y_test, num_classes)
+# y_train = keras.utils.to_categorical(y_train, num_classes)
+# y_test = keras.utils.to_categorical(y_test, num_classes)
 
 """
 ## Build the model
@@ -78,17 +84,17 @@ model.summary()
 """
 
 batch_size = 128
-epochs = 3
+epochs = 10
 
 model.compile(loss="categorical_crossentropy", optimizer="adam", metrics=["accuracy"])
 
 # model.fit(x_train, y_train, batch_size=batch_size, epochs=epochs, validation_split=0.1)
-model.fit(train_ds, validation_ds, batch_size=batch_size, epochs=epochs)
+model.fit(train_ds, batch_size=batch_size, epochs=epochs, validation_data=validation_ds)
 
 """
 ## Evaluate the trained model
 """
-
-score = model.evaluate(x_test, y_test, verbose=0)
+# testデータを準備したあとで使用
+score = model.evaluate(test_ds, verbose=0)
 print("Test loss:", score[0])
 print("Test accuracy:", score[1])
