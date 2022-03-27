@@ -34,14 +34,26 @@ from keras.preprocessing.image import ImageDataGenerator,array_to_img,img_to_arr
 ## データ拡張した画像を保存する: saveNewFigure => True  *データ拡張することが前提なので、generateFigureをtrueにすること。Falseで加工した画像を9枚表示する
 ##
 """
+# #################################################################################
+# learnModel = True
+# saveModel = True
+# useLearnedModel = False
+# evaluateTrainedModel = False
+# showFigureTest = False
+# generateFigure = False
+# saveNewFigure = False
+# useLearnedModelForLearing = False
+# ###################################################################################
+
 ###################################################################################
 learnModel = False
 saveModel = False
 useLearnedModel = True
-evaluateTrainedModel = False
+evaluateTrainedModel =  True
 showFigureTest = False
-generateFigure = True
+generateFigure = False
 saveNewFigure = False
+useLearnedModelForLearing = False
 ###################################################################################
 
 
@@ -107,8 +119,11 @@ if learnModel:
     ## Train the model
     """
     batch_size = 128
-    epochs = 3
-    model.compile(loss="categorical_crossentropy", optimizer="adam", metrics=["accuracy","Precision","AUC"])
+    epochs = 5
+    if useLearnedModelForLearing:
+        model = load_model('learned_model.h5')
+    else:
+        model.compile(loss="categorical_crossentropy", optimizer="adam", metrics=["accuracy","Precision","AUC"])
     model.fit(train_ds, batch_size=batch_size, epochs=epochs, validation_data=validation_ds)
 
 
@@ -117,7 +132,7 @@ if learnModel:
 ## 学習済みモデルはfile.pyと同じファイルに保存すること
 """
 if useLearnedModel:
-    model = load_model('leaned_model.h5')
+    model = load_model('learned_model.h5')
 
 
 """
@@ -139,6 +154,7 @@ if evaluateTrainedModel:
     """
 
     test_np = tfds.as_numpy(test_ds)
+    y_preds = np.empty((2,2), int)
     y_pred_argmax_datas = np.empty(0, int)
     y_test_argmax_datas = np.empty(0, int)
     for i in range(len(test_np)):
@@ -156,8 +172,14 @@ if evaluateTrainedModel:
         y_pred_argmax = tf.argmax(y_pred, axis = 1).numpy()
         y_test_argmax = tf.argmax(y_test, axis = 1).numpy()
 
-        y_pred_argmax_datas = np.append(y_pred_argmax_datas,y_pred_argmax)
-        y_test_argmax_datas = np.append(y_test_argmax_datas,y_test_argmax)
+        if i == 0:
+            y_preds = y_pred
+            y_pred_argmax_datas = y_pred_argmax
+            y_test_argmax_datas = y_test_argmax
+        else:
+            y_preds = np.append(y_preds, y_pred, axis=0)
+            y_pred_argmax_datas = np.append(y_pred_argmax_datas,y_pred_argmax)
+            y_test_argmax_datas = np.append(y_test_argmax_datas,y_test_argmax)
 
     print("@@@@@@@@@@@@@@@@@ y_pred_argmax_datas @@@@@@@@@@@@@@@")
     print(y_pred_argmax_datas)
@@ -166,12 +188,17 @@ if evaluateTrainedModel:
     print(y_test_argmax_datas)
     print("")
     print("@@@@@@@@@@@@@@@@@ y_pred_argmax_data @@@@@@@@@@@@@@@")
+
+    class1 = 0
+    class2 = 0
     for i in range(len(y_pred_argmax_datas)):
-        print(i, y_pred_argmax_datas[i])
-    print("")
-    print("@@@@@@@@@@@@@@@@@ y_test_argmax_data @@@@@@@@@@@@@@@")
-    for i in range(len(y_test_argmax_datas)):
-        print(i, y_pred_argmax_datas[i])
+        if y_test_argmax_datas[i] == 0:
+            class1 += 1
+            print("class1",class1, "  ", y_pred_argmax_datas[i], "  ", y_preds[i])
+        elif y_test_argmax_datas[i] == 1:
+            class2 += 1
+            print("class2",class2, "  ", y_pred_argmax_datas[i], "  ", y_preds[i])
+
     print("")
     print("@@@@@@@@@@@@@@@@@ Result matrix @@@@@@@@@@@@@@@")
     print(tf.math.confusion_matrix(y_test_argmax_datas, y_pred_argmax_datas))
@@ -183,7 +210,10 @@ if evaluateTrainedModel:
 """
 if learnModel & saveModel:
     model.save('learned_model.h5')
+    print("")
     print("finish saving the model!")
+    print("")
+
 
 
 
@@ -219,7 +249,7 @@ if generateFigure:
     ## 使用するdatageneratorのコメントアウトを外して使用すること
     """
     # # 回転させる
-    # datagen = ImageDataGenerator(rotation_range = 45)
+    # datagen = ImageDataGenerator(rotation_range = 60)
     # # ランダムに上下反転する。
     # datagen = image.ImageDataGenerator(vertical_flip=True) 
     # # ランダムに左右反転する。
@@ -227,7 +257,7 @@ if generateFigure:
     # [-0.3 * Height, 0.3 * Height] の範囲でランダムに上下平行移動する。
     # datagen = image.ImageDataGenerator(height_shift_range=0.7)
     # # [-0.3 * Width, 0.3 * Width] の範囲でランダムに左右平行移動する。
-    # datagen = image.ImageDataGenerator(width_shift_range=0.5)
+    # datagen = image.ImageDataGenerator(width_shift_range=0.6)
     # # -5° ~ 5° の範囲でランダムにせん断する。 
     # datagen = image.ImageDataGenerator(shear_range=5)
     # # [1 - 0.3, 1 + 0.3] の範囲でランダムに拡大縮小する。
@@ -235,8 +265,10 @@ if generateFigure:
     # # [-5.0, 5.0] の範囲でランダムに画素値に値を足す。
     # datagen = image.ImageDataGenerator(channel_shift_range=5.)
     # # [0.3, 1.0] の範囲でランダムに明度を変更する。
-    datagen = ImageDataGenerator(brightness_range=[0.3, 0.4])
-    # datagen = ImageDataGenerator(channel_shift_range = 123)
+    # datagen = ImageDataGenerator(brightness_range=[0.3, 0.4])
+    # datagen = ImageDataGenerator(channel_shift_range = 100)
+
+    datagen = ImageDataGenerator(rotation_range = 40, vertical_flip=True,horizontal_flip=True,height_shift_range=0.3, width_shift_range=0.3,channel_shift_range = 100)
 
 
     """
