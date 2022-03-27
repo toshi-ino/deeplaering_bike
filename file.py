@@ -32,6 +32,7 @@ from keras.preprocessing.image import ImageDataGenerator,array_to_img,img_to_arr
 ## 取り込んだ画像を表示する: showFigureTest => True  とりあえず3x3で表示するように組んでいる
 ## データ拡張を行う: generateFigure => True  
 ## データ拡張した画像を保存する: saveNewFigure => True  *データ拡張することが前提なので、generateFigureをtrueにすること。Falseで加工した画像を9枚表示する
+## 学習済みモデルを使用して再度学習を行う: useLearnedModelForLearing => True
 ##
 """
 # #################################################################################
@@ -63,9 +64,6 @@ useLearnedModelForLearing = False
 # Model / data parameters
 num_classes = 2
 input_shape = (256, 256, 3)
-
-# the data, split between train and test sets
-# (x_train, y_train), (x_test, y_test) = keras.datasets.mnist.load_data()
 
 train_ds = image_dataset_from_directory(
     directory='training_data/',
@@ -162,7 +160,7 @@ if evaluateTrainedModel:
 
         # y_test: テストのラベル
         # x_test: テストの画像データ
-        # test_npの形 [(128, 128, 3, 32), (128, 128, 3, 32), (128, 128, 3, 32)]
+        # 画像データの形 [(128, 128, 3, 32), (128, 128, 3, 32), (128, 128, 3, 32)]
         # https://numpy.org/doc/stable/reference/generated/numpy.concatenate.html
         y_test = [x[1] for x in test_np][i]
         x_test = [x[0] for x in test_np][i]
